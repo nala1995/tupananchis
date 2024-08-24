@@ -9,7 +9,7 @@ const path = require('path');
 
 const app = express();
 const stripe = Stripe(process.env.REACT_APP_STRIPE_SECRET_KEY_API);
-const corsOptions = { origin: 'https://nalabusinesses.vercel.app/Shopping', optionsSuccessStatus: 200, methods: ['GET', 'POST'], allowedHeaders: ['Content-Type', 'Authorization']};
+const corsOptions = { origin: 'https://nalabusinesses.vercel.app', optionsSuccessStatus: 200, methods: ['GET', 'POST'], allowedHeaders: ['Content-Type', 'Authorization']};
 
 app.use(cors(corsOptions));
 app.use(express.json());
