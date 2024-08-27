@@ -13,20 +13,11 @@ const corsOptions = { origin: 'https://www.nalabusinesses.com', optionsSuccessSt
 
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'build')));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
-});
+//app.use(express.static(path.join(__dirname, 'build')));
+//app.get('*', (req, res) => {
+//  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+//});
 
-
-
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
 
 
 app.post('/create-checkout-session', async (req, res) => {
@@ -68,6 +59,14 @@ app.post('/send-email', (req, res) => {
       }
       res.status(200).send('Correo enviado: ' + info.response);
     });
+  });
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
   });
 
   app.post('/create-wompi-checkout-session', (req, res) => {
