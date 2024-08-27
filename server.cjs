@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
 require('dotenv').config();
 const path = require('path');
+const { google } = require('googleapis');
 
 const app = express();
 const stripe = Stripe(process.env.REACT_APP_STRIPE_SECRET_KEY_API);
@@ -43,31 +44,6 @@ app.post('/create-checkout-session', async (req, res) => {
     }
 });
 
-app.post('/send-email', (req, res) => {
-    const { email, selectedValue } = req.body;
-  
-    const mailOptions = {
-      from: process.env.REACT_APP_EMAIL_USER,
-      to: 'nalabusiness1995@gmail.com',
-      subject: 'Solicitud de cotización',
-      text: `Se ha recibido una solicitud de cotización con la siguiente información:\n\nEmail: ${email}\nValor seleccionado: ${selectedValue}`
-    };
-  
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        return res.status(500).send(error.toString());
-      }
-      res.status(200).send('Correo enviado: ' + info.response);
-    });
-  });
-
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
 
   app.post('/create-wompi-checkout-session', (req, res) => {
     try {
@@ -90,7 +66,56 @@ app.post('/send-email', (req, res) => {
     }
   });
 
- 
+
+  const OAuth2 = google.auth.OAuth2;
+
+  const oauth2Client = new OAuth2(
+    process.env.CLIENT_ID_GMAIL,
+    process.env.CLIENT_SECRET_GMAIL,
+    "https://developers.google.com/oauthplayground" 
+  );
+  
+  oauth2Client.setCredentials({
+    refresh_token: process.env.REFRESH_TOKEN_GMAIL,
+  });
+  
+  async function sendMail(email, selectedValue) {
+    const accessToken = await oauth2Client.getAccessToken();
+  
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        type: 'OAuth2',
+        user: process.env.REACT_APP_EMAIL_USER,
+        clientId: process.env.CLIENT_ID_GMAIL,
+        clientSecret: process.env.CLIENT_SECRET_GMAIL,
+        refreshToken: process.env.REFRESH_TOKEN_GMAIL,
+        accessToken: accessToken.token,
+      },
+    });
+  
+    const mailOptions = {
+      from: process.env.REACT_APP_EMAIL_USER,
+      to: 'nalabusiness1995@gmail.com', 
+      subject: 'Solicitud de cotización',
+      text: `Se ha recibido una solicitud de cotización con la siguiente información:\n\nEmail: ${email}\nValor seleccionado: ${selectedValue}`,
+    };
+  
+    return transporter.sendMail(mailOptions);
+  }
+  
+  app.post('/send-email', async (req, res) => {
+    const { email, selectedValue } = req.body;
+  
+    try {
+      await sendMail(email, selectedValue);
+      res.status(200).send('Correo enviado');
+    } catch (error) {
+      console.error('Error enviando correo:', error);
+      res.status(500).send('Error enviando correo');
+    }
+  });
+  
 
 const PORT = process.env.REACT_APP_PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
