@@ -80,19 +80,20 @@ app.post('/create-checkout-session', async (req, res) => {
   });
   
   async function sendMail(email, selectedValue) {
-    const accessToken = await oauth2Client.getAccessToken();
-  
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        type: 'OAuth2',
-        user: process.env.REACT_APP_EMAIL_USER,
-        clientId: process.env.CLIENT_ID_GMAIL,
-        clientSecret: process.env.CLIENT_SECRET_GMAIL,
-        refreshToken: process.env.REFRESH_TOKEN_GMAIL,
-        accessToken: accessToken.token,
-      },
-    });
+      try {
+        const { token: accessToken } = await oauth2Client.getAccessToken();
+    
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            type: 'OAuth2',
+            user: process.env.REACT_APP_EMAIL_USER, 
+            clientId: process.env.CLIENT_ID_GMAIL, 
+            clientSecret: process.env.CLIENT_SECRET_GMAIL, 
+            refreshToken: process.env.REFRESH_TOKEN_GMAIL, 
+            accessToken: accessToken,  
+          },
+        });
   
     const mailOptions = {
       from: process.env.REACT_APP_EMAIL_USER,
@@ -100,9 +101,13 @@ app.post('/create-checkout-session', async (req, res) => {
       subject: 'Solicitud de cotización',
       text: `Se ha recibido una solicitud de cotización con la siguiente información:\n\nEmail: ${email}\nValor seleccionado: ${selectedValue}`,
     };
-  
-    return transporter.sendMail(mailOptions);
+    const result = await transporter.sendMail(mailOptions);
+    return result;
+  } catch (error) {
+    console.error('Error enviando correo:', error);
+    throw error;
   }
+}
   
   app.post('/send-email', async (req, res) => {
     const { email, selectedValue } = req.body;
